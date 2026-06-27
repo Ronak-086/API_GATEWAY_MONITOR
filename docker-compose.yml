@@ -1,0 +1,73 @@
+version: "3.9"
+
+services:
+  gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: platform/gateway:local
+    container_name: gateway
+    ports:
+      - "8080:8080"
+    environment:
+      SERVER_PORT: 8080
+      REDIS_URL: redis://redis:6379/0
+      POSTGRES_URL: postgres://postgres:postgres@postgres:5432/gateway?sslmode=disable
+      RATE_LIMITER_CAPACITY: 5
+      RATE_LIMITER_REFILL_RATE: 1.0
+      CIRCUIT_BREAKER_FAILURE_THRESHOLD_RATE: 0.5
+      CIRCUIT_BREAKER_COOLDOWN_TIMEOUT: 30s
+      GATEWAY_UPSTREAM_URL: http://mock-backend:80
+      APP_ENV: production
+    depends_on:
+      - redis
+      - mock-backend
+    networks:
+      - gateway-net
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: gateway-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    command: ["redis-server", "--appendonly", "yes"]
+    networks:
+      - gateway-net
+    restart: unless-stopped
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: gateway-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+    depends_on:
+      - gateway
+    networks:
+      - gateway-net
+    restart: unless-stopped
+
+  mock-backend:
+    image: hashicorp/http-echo:latest
+    container_name: gateway-mock-backend
+    command: ["-text=hello from mock backend", "-listen=:80"]
+    ports:
+      - "9000:80"
+    networks:
+      - gateway-net
+    restart: unless-stopped
+
+networks:
+  gateway-net:
+    driver: bridge
+
+volumes:
+  redis-data:
+  prometheus-data:
