@@ -1,4 +1,4 @@
-# 🚀 Gateway — High-Performance Distributed API Gateway in Go
+# 🚀 API_GATEWAY_MONITOR — High-Performance Distributed API Gateway in Go
 
 [![Go Version](https://img.shields.io/badge/Go-1.22-00ADD8?style=flat&logo=go)](https://go.dev/)
 [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?style=flat&logo=docker)](https://www.docker.com/)
